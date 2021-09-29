@@ -76,6 +76,10 @@ func DynamicScan(model interface{}, sqlStr string) ([]interface{}, error){
 	if err != nil{
 		return nil, err
 	}
+	columnTypes, err := rows.ColumnTypes()
+	if err != nil{
+		return nil, err
+	}
 
 	// key 为 json 标签，value 为字段类型结构体
 	t := reflect.TypeOf(model)
@@ -94,12 +98,19 @@ func DynamicScan(model interface{}, sqlStr string) ([]interface{}, error){
 	valPtr := make([]interface{}, 0)
 	for i := 0; i< len(columns);i++{
 		name := columns[i]
-		field := tagFiled[name]
-		nullable, ok := ColumnNullableMap[field.Type]
-		if !ok{
-			return nil, fmt.Errorf("not support type %v of field %s", field.Type, name)
+		if field, ok := tagFiled[name]; ok{
+			nullable, ok := ColumnNullableMap[field.Type]
+			if !ok{
+				return nil, fmt.Errorf("not support type %v of field %s", field.Type, name)
+			}
+			valPtr = append(valPtr, nullable)
+		}else{
+			// 如果 columns 中的列不包含在结构体字段中，通过 column 类型示例补全 scan 数组
+			ct := columnTypes[i]
+			t := ct.ScanType()
+			nullable := reflect.New(t).Interface()
+			valPtr = append(valPtr, nullable)
 		}
-		valPtr = append(valPtr, nullable)
 	}
 
 	var slice = make([]interface{}, 0)
@@ -207,4 +218,30 @@ func main(){
 		panic(err)
 	}
 	utils.PrintJson("实际的字段类型不匹配: %v \n", slice)
+
+	// SQL多余的列不解析
+	type DmUser2 struct {
+		ID      float64   `json:"id"`
+		Name    string    `json:"name"`
+		Gender  string    `json:"gender"`
+	}
+	slice, err = DynamicScan(DmUser2{}, "select id, name, gender, created, time from user")
+	if err != nil{
+		panic(err)
+	}
+	utils.PrintJson("SQL多余的列不解析: %v \n", slice)
+
+	// SQL 的列不足结构体会使用默认值
+	type DmUser3 struct {
+		ID      int       `json:"id"`
+		Name    string    `json:"name"`
+		Gender  int64     `json:"gender"`
+		Created time.Time `json:"created"`
+		Time    time.Time `json:"time"`
+	}
+	slice, err = DynamicScan(DmUser3{}, "select id, name, gender from user")
+	if err != nil{
+		panic(err)
+	}
+	utils.PrintJson("SQL 的列不足结构体会使用默认值: %v \n", slice)
 }
