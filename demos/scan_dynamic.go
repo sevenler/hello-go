@@ -185,6 +185,12 @@ func main(){
 	}
 	utils.PrintJson("动态 scan 结构体的数据: %v \n", slice)
 
+	slice, err = DynamicScan(DmUser{}, "select id, name, gender, created, time from user where 1 = 2")
+	if err != nil{
+		panic(err)
+	}
+	utils.PrintJson("动态 scan 结构体的数据无数据: %v \n", slice)
+
 	// 结构体指针
 	slice, err = DynamicScan(&DmUser{}, "select id, name, gender, created, time from user")
 	if err != nil{
@@ -244,4 +250,6 @@ func main(){
 		panic(err)
 	}
 	utils.PrintJson("SQL 的列不足结构体会使用默认值: %v \n", slice)
+
+	// TODO 待覆盖所有的值类型 mysql 值类型
 }
