@@ -11,19 +11,6 @@ import (
 	"time"
 )
 
-var ColumnNullableMap = map[reflect.Type]Nullable{
-	reflect.TypeOf(int(0)): &sql.NullInt64{},
-	reflect.TypeOf(int64(0)): &sql.NullInt64{},
-	reflect.TypeOf(int32(0)): &sql.NullInt32{},
-	reflect.TypeOf(float64(0)): &sql.NullFloat64{},
-	reflect.TypeOf(""): &sql.NullString{},
-	reflect.TypeOf(true): &sql.NullBool{},
-	reflect.TypeOf(time.Now()): &sql.NullTime{},
-}
-
-type Nullable interface {
-	Value() (driver.Value, error)
-}
 
 //CREATE TABLE `user` (
 //`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键id',
@@ -34,13 +21,37 @@ type Nullable interface {
 //PRIMARY KEY (`id`)
 //)
 type DmUser struct {
-	ID      int       `json:"id"`
-	Name    string    `json:"name"`
-	Gender  int64     `json:"gender"`
-	Created time.Time `json:"created"`
+	ID      *int       `json:"id"`
+	Name    *string    `json:"name"`
+	Gender  *int64     `json:"gender"`
+	Created *time.Time `json:"created"`
+	Time    *time.Time `json:"time"`
 }
 
-func DynamicScan(model interface{}, sqlStr string, columns []string) ([]interface{}, error){
+
+var ColumnNullableMap = map[reflect.Type]Nullable{
+	reflect.TypeOf(int(0)): &sql.NullInt64{},
+	reflect.TypeOf(int64(0)): &sql.NullInt64{},
+	reflect.TypeOf(int32(0)): &sql.NullInt32{},
+	reflect.TypeOf(float64(0)): &sql.NullFloat64{},
+	reflect.TypeOf(""): &sql.NullString{},
+	reflect.TypeOf(true): &sql.NullBool{},
+	reflect.TypeOf(time.Now()): &sql.NullTime{},
+
+	reflect.TypeOf(utils.IntPtr(0)): &sql.NullInt64{},
+	reflect.TypeOf(utils.Int64Ptr(0)): &sql.NullInt64{},
+	reflect.TypeOf(utils.Int32Ptr(0)): &sql.NullInt32{},
+	reflect.TypeOf(utils.Float64Ptr(0)): &sql.NullFloat64{},
+	reflect.TypeOf(utils.StringPtr("")): &sql.NullString{},
+	reflect.TypeOf(utils.BoolPtr(true)): &sql.NullBool{},
+	reflect.TypeOf(utils.TimePtr(time.Now())): &sql.NullTime{},
+}
+
+type Nullable interface {
+	Value() (driver.Value, error)
+}
+
+func DynamicScan(model interface{}, sqlStr string) ([]interface{}, error){
 	db, err := sql.Open("mysql","root:@/butterfly?parseTime=true")
 	if err != nil {
 		log.Fatalln(err)
@@ -50,6 +61,10 @@ func DynamicScan(model interface{}, sqlStr string, columns []string) ([]interfac
 	defer rows.Close()
 	if err != nil {
 		log.Fatal(err)
+	}
+	columns, err := rows.Columns()
+	if err != nil{
+		panic("error columns")
 	}
 
 	t := reflect.TypeOf(model)
@@ -101,6 +116,23 @@ func DynamicScan(model interface{}, sqlStr string, columns []string) ([]interfac
 				case reflect.TypeOf(time.Now()):
 					t := rowValue.(time.Time)
 					field.Set(reflect.ValueOf(t))
+
+				case reflect.TypeOf(utils.IntPtr(0)):
+					field.Set(reflect.ValueOf(utils.IntPtr(int(rowValue.(int64)))))
+				case reflect.TypeOf(utils.Int64Ptr(0)):
+					field.Set(reflect.ValueOf(utils.Int64Ptr(rowValue.(int64))))
+				case reflect.TypeOf(utils.Int32Ptr(0)):
+					field.Set(reflect.ValueOf(utils.Int32Ptr(rowValue.(int32))))
+				case reflect.TypeOf(utils.Float64Ptr(0)):
+					field.Set(reflect.ValueOf(utils.Float64Ptr(rowValue.(float64))))
+				case reflect.TypeOf(utils.StringPtr("")):
+					field.Set(reflect.ValueOf(utils.StringPtr(rowValue.(string))))
+				case reflect.TypeOf(utils.BoolPtr(true)):
+					field.Set(reflect.ValueOf(utils.BoolPtr(rowValue.(bool))))
+				case reflect.TypeOf(utils.TimePtr(time.Now())):
+					t := rowValue.(time.Time)
+					field.Set(reflect.ValueOf(utils.TimePtr(t)))
+
 				default:
 					return nil, fmt.Errorf("error set row %s got type %v",
 						filedName, field.Type())
@@ -115,8 +147,7 @@ func DynamicScan(model interface{}, sqlStr string, columns []string) ([]interfac
 func main(){
 	// 动态 scan 结构体的数据
 	slice, err := DynamicScan(DmUser{},
-		"select id, name, gender, created from user",
-		[]string{"id", "name", "gender", "created"})
+		"select id, name, gender, created, time from user")
 	if err != nil{
 		panic(err)
 	}
