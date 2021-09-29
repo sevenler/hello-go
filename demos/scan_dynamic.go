@@ -10,22 +10,15 @@ import (
 	"time"
 )
 
-
-//CREATE TABLE `user` (
+//
+//CREATE TABLE `user0` (
 //`id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键id',
 //`name` varchar(36) DEFAULT NULL COMMENT 'name',
-//`gender` int DEFAULT NULL COMMENT 'gender',
+//`gender` varchar(36) DEFAULT NULL COMMENT 'gender',
 //`created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 //`updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 //PRIMARY KEY (`id`)
 //)
-type DmUser struct {
-	ID      *int       `json:"id"`
-	Name    *string    `json:"name"`
-	Gender  *int64     `json:"gender"`
-	Created *time.Time `json:"created"`
-	Time    *time.Time `json:"time"`
-}
 
 var (
 	TypeInt reflect.Type = reflect.TypeOf(int(0))
@@ -166,11 +159,52 @@ func DynamicScan(model interface{}, sqlStr string) ([]interface{}, error){
 }
 
 func main(){
+	type DmUser struct {
+		ID      *int       `json:"id"`
+		Name    *string    `json:"name"`
+		Gender  *int64     `json:"gender"`
+		Created *time.Time `json:"created"`
+		Time    *time.Time `json:"time"`
+	}
+
 	// 动态 scan 结构体的数据
-	slice, err := DynamicScan(&DmUser{},
-		"select id, name, gender, created, time from user")
+	slice, err := DynamicScan(DmUser{}, "select id, name, gender, created, time from user")
 	if err != nil{
 		panic(err)
 	}
-	utils.PrintJson("%v \n", slice)
+	utils.PrintJson("动态 scan 结构体的数据: %v \n", slice)
+
+	// 结构体指针
+	slice, err = DynamicScan(&DmUser{}, "select id, name, gender, created, time from user")
+	if err != nil{
+		panic(err)
+	}
+
+	// 字段非指针类型
+	type DmUser0 struct {
+		ID      int       `json:"id"`
+		Name    string    `json:"name"`
+		Gender  int64     `json:"gender"`
+		Created time.Time `json:"created"`
+		Time    time.Time `json:"time"`
+	}
+	slice, err = DynamicScan(DmUser0{}, "select id, name, gender, created, time from user")
+	if err != nil{
+		panic(err)
+	}
+	utils.PrintJson("字段非指针类型: %v \n", slice)
+
+	// 实际的字段类型不匹配
+	type DmUser1 struct {
+		ID      float64   `json:"id"`
+		Name    string    `json:"name"`
+		Gender  string    `json:"gender"`
+		Created time.Time `json:"created"`
+		Time    time.Time `json:"time"`
+	}
+	slice, err = DynamicScan(DmUser1{}, "select id, name, gender, created, time from user")
+	if err != nil{
+		panic(err)
+	}
+	utils.PrintJson("实际的字段类型不匹配: %v \n", slice)
 }
