@@ -10,7 +10,8 @@ type UserOperator struct {}
 
 func (uo *UserOperator) BatchGet(ctx *context.Context, ids []int) []*User{
 	ouo := model.NewOperator()
-	q, err := ouo.Query(ctx, &model.ORMUser{}, sq.Eq{"id": ids})
+	args := []interface{}{sq.Eq{"id": ids}}
+	q, err := ouo.Query(ctx, &model.ORMUser{}, args)
 	if err != nil{
 		panic(err)
 	}
@@ -27,7 +28,8 @@ func (uo *UserOperator) BatchGet(ctx *context.Context, ids []int) []*User{
 
 func (uo *UserOperator) Get(ctx *context.Context, id int) *User{
 	ouo := model.NewOperator()
-	q, err := ouo.Query(ctx, &model.ORMUser{}, sq.Eq{"id": id})
+	args := []interface{}{sq.Eq{"id": id}}
+	q, err := ouo.Query(ctx, &model.ORMUser{}, args)
 	if err != nil{
 		panic(err)
 	}

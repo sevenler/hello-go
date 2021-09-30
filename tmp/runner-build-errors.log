@@ -1,0 +1,4 @@
+# git.in.zhihu.com/zhihu/hello/model
+model/base.go:42:4: no new variables on left side of :=
+model/base.go:64:4: no new variables on left side of :=
+model/base.go:85:4: no new variables on left side of :=
