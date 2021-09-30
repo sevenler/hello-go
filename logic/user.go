@@ -31,13 +31,11 @@ func Reverse(user *User) *model.ORMUser{
 }
 
 
-type UserOperator struct {
-
-}
+type UserOperator struct {}
 
 func (uo *UserOperator) BatchGet(ctx *context.Context, ids []int) []*User{
-	ouo := model.NewUserOperator(ctx)
-	q, err := ouo.Query(ctx, sq.Eq{"id": ids})
+	ouo := model.NewOperator()
+	q, err := ouo.Query(ctx, &model.ORMUser{}, sq.Eq{"id": ids})
 	if err != nil{
 		panic(err)
 	}
@@ -53,8 +51,8 @@ func (uo *UserOperator) BatchGet(ctx *context.Context, ids []int) []*User{
 }
 
 func (uo *UserOperator) Get(ctx *context.Context, id int) *User{
-	ouo := model.NewUserOperator(ctx)
-	q, err := ouo.Query(ctx, sq.Eq{"id": id})
+	ouo := model.NewOperator()
+	q, err := ouo.Query(ctx, &model.ORMUser{}, sq.Eq{"id": id})
 	if err != nil{
 		panic(err)
 	}
@@ -67,7 +65,7 @@ func (uo *UserOperator) Get(ctx *context.Context, id int) *User{
 }
 
 func (uo *UserOperator) Create(ctx *context.Context, user *User) bool{
-	ouo := model.NewUserOperator(ctx)
+	ouo := model.NewOperator()
 	u := Reverse(user)
 	c, err := ouo.Create(ctx, u)
 	if err != nil{
@@ -77,7 +75,7 @@ func (uo *UserOperator) Create(ctx *context.Context, user *User) bool{
 }
 
 func (uo *UserOperator) Update(ctx *context.Context, user *User) bool{
-	ouo := model.NewUserOperator(ctx)
+	ouo := model.NewOperator()
 	u := Reverse(user)
 	c, err := ouo.Update(ctx, u)
 	if err != nil{

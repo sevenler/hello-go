@@ -11,6 +11,33 @@ type Table interface {
 	TableName() string
 }
 
+func BuildSelectSQL(st interface{}, queryArgs ...interface{}) (*string, []interface{}, error){
+	t := reflect.TypeOf(st)
+	if t.Kind() == reflect.Ptr{
+		t = t.Elem()
+	}
+	names := make([]string, 0)
+	for i := 0; i< t.NumField();i++{
+		field := t.Field(i)
+		v := field.Tag.Get("json")
+		if v == ""{
+			return nil, nil, fmt.Errorf("field %v not set json tag", field.Name)
+		}
+		names = append(names, v)
+	}
+
+	tableName := st.(Table).TableName()
+	sqlBuilder := sq.Select(names...).From(tableName)
+	if len(queryArgs) > 0{
+		sqlBuilder = sqlBuilder.Where(queryArgs[0], queryArgs[1:]...)
+	}
+	sql, args, err := sqlBuilder.ToSql()
+	if err != nil{
+		return nil, nil, err
+	}
+	return &sql, args, nil
+}
+
 func BuildInsertSQL(t interface{}) (string, []interface{}, error){
 	columns := make([]string, 0)
 	values := make([]interface{}, 0)

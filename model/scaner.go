@@ -1,14 +1,13 @@
 package model
 
 import (
-	"context"
 	sqlCon "database/sql"
-"database/sql/driver"
-"fmt"
-"git.in.zhihu.com/zhihu/hello/utils"
-_ "github.com/go-sql-driver/mysql"
-"reflect"
-"time"
+	"database/sql/driver"
+	"fmt"
+	"git.in.zhihu.com/zhihu/hello/utils"
+	_ "github.com/go-sql-driver/mysql"
+	"reflect"
+	"time"
 )
 
 var (
@@ -52,17 +51,7 @@ type Nullable interface {
 }
 
 // 将SQL查询的数据动态转化成 model 对应的结构体
-func Scan(ctx *context.Context, model interface{}, sql string, args ...interface{}) (interface{}, error){
-	db, err := GetConnection(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := db.Query(sql, args...)
-	defer rows.Close()
-	if err != nil {
-		return nil, err
-	}
+func Scan(model interface{}, rows *sqlCon.Rows) (interface{}, error){
 	columns, err := rows.Columns()
 	if err != nil{
 		return nil, err
