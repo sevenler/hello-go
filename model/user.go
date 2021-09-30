@@ -10,12 +10,12 @@ type ORMUser struct {
 	Gender int64  `json:"gender"`
 }
 
-func (om ORMUser)PrimaryKey() map[string]interface{}{
+func (om *ORMUser)PrimaryKey() map[string]interface{}{
 	return map[string]interface{}{
 		"id": om.ID,
 	}
 }
 
-func (om ORMUser)TableName() string{
+func (om *ORMUser)TableName() string{
 	return "user"
 }

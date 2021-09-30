@@ -28,12 +28,13 @@ func (uo OperatorImpl) Query(ctx *context.Context, st interface{}, queryArgs ...
 		return nil, err
 	}
 
-	db, err := GetConnection(ctx)
+	con, err := GetConnection(ctx)
+	defer con.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := db.Query(*sql, args...)
+	rows, err := con.Query(*sql, args...)
 	defer rows.Close()
 	if err != nil {
 		return nil, err
@@ -49,6 +50,7 @@ func (uo OperatorImpl) Create(ctx *context.Context, st interface{}) (int64, erro
 	}
 
 	con, err := GetConnection(ctx)
+	defer con.Close()
 	if err != nil{
 		panic(err)
 	}
@@ -68,6 +70,7 @@ func (uo OperatorImpl) Update(ctx *context.Context, st interface{}) (int64, erro
 	}
 
 	con, err := GetConnection(ctx)
+	defer con.Close()
 	if err != nil{
 		panic(err)
 	}

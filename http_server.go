@@ -47,5 +47,6 @@ func main() {
 	http.HandleFunc("/user/batch/get", view.BatchGetUser)
 	http.HandleFunc("/user/get", view.GetUser)
 	http.HandleFunc("/user/create", view.CreateUser)
+	http.HandleFunc("/user/update", view.UpdateUser)
 	http.ListenAndServe(":8090", nil)
 }

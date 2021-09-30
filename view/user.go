@@ -3,6 +3,7 @@ package view
 import (
 	"encoding/json"
 	"git.in.zhihu.com/zhihu/hello/logic"
+	"math/rand"
 	"net/http"
 )
 
@@ -37,7 +38,6 @@ func GetUser(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	uo := &logic.UserOperator{}
 	user := uo.Get(&ctx, 3)
-
 	w.Write(ResponseObject(10, "---", user))
 }
 
@@ -49,5 +49,17 @@ func CreateUser(w http.ResponseWriter, req *http.Request) {
 		Gender: 100,
 	}
 	count := uo.Create(&ctx, &user)
+	w.Write(ResponseObject(0, "", count))
+}
+
+func UpdateUser(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	uo := logic.UserOperator{}
+	user := logic.User{
+		ID: 1,
+		Name:   "Daniel's HTTP Updated",
+		Gender: rand.Int63n(100000),
+	}
+	count := uo.Update(&ctx, &user)
 	w.Write(ResponseObject(0, "", count))
 }
