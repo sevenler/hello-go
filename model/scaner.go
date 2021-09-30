@@ -1,7 +1,8 @@
 package model
 
 import (
-sqlCon "database/sql"
+	"context"
+	sqlCon "database/sql"
 "database/sql/driver"
 "fmt"
 "git.in.zhihu.com/zhihu/hello/utils"
@@ -51,8 +52,8 @@ type Nullable interface {
 }
 
 // 将SQL查询的数据动态转化成 model 对应的结构体
-func Scan(model interface{}, sql string, args ...interface{}) (interface{}, error){
-	db, err := sqlCon.Open("mysql","root:@/butterfly?parseTime=true")
+func Scan(ctx *context.Context, model interface{}, sql string, args ...interface{}) (interface{}, error){
+	db, err := GetConnection(ctx)
 	if err != nil {
 		return nil, err
 	}

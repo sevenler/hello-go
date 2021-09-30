@@ -12,6 +12,16 @@ type ORMUser struct {
 }
 
 func NewUserOperator(ctx *context.Context) Operator{
-	operator := NewOperator(ctx, &ORMUser{}, "user")
+	operator := NewOperator(ctx, ORMUser{}, "user")
 	return operator
+}
+
+func (om ORMUser)PrimaryKey() map[string]interface{}{
+	return map[string]interface{}{
+		"id": om.ID,
+	}
+}
+
+func (om ORMUser)TableName() string{
+	return "user"
 }
