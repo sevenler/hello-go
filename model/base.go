@@ -1,19 +1,20 @@
 package model
 
 import (
+	"fmt"
+	sq "github.com/Masterminds/squirrel"
+
 	"context"
 	"database/sql"
-	"fmt"
 	b "github.com/orca-zhang/borm"
 	"reflect"
-	"runtime/debug"
 	"time"
 )
 
 type Operator interface {
-	Query(ctx *context.Context, filterArgs ...b.BormItem) reflect.Value
-	Create(ctx *context.Context, user interface{}) int64
-	Update(ctx *context.Context, user interface{}) int64
+	Query(ctx *context.Context, queryArgs ...interface{}) (interface{}, error)
+	Create(ctx *context.Context, user interface{}) (int64, error)
+	Update(ctx *context.Context, user interface{}) (int64, error)
 }
 
 
@@ -51,78 +52,54 @@ func NewOperator(ctx *context.Context, model interface{}, tableName string) Oper
 	}
 }
 
-func (uo OperatorImpl) Query(ctx *context.Context, filterArgs ...b.BormItem) reflect.Value{
-	t := GetORMTable(ctx, uo.TableName)
-	where := b.Where(b.Eq("id", 4))
+func (uo OperatorImpl) buildSQL(ctx *context.Context, queryArgs ...interface{}) (*string, []interface{}, error){
+	t := reflect.TypeOf(uo.ModelStruct)
+	if t.Kind() == reflect.Ptr{
+		t = t.Elem()
+	}
+	names := make([]string, 0)
+	for i := 0; i< t.NumField();i++{
+		field := t.Field(i)
+		v := field.Tag.Get("json")
+		if v == ""{
+			return nil, nil, fmt.Errorf("field %v not set json tag", field.Name)
+		}
+		names = append(names, v)
+	}
 
-	array := make([]*ORMUser, 0)
-	_, err := t.Select(&array, where)
-	fmt.Println(filterArgs)
+	sqlBuilder := sq.Select(names...).From(uo.TableName)
+	if len(queryArgs) > 0{
+		sqlBuilder = sqlBuilder.Where(queryArgs[0], queryArgs[1:]...)
+	}
+	sql, args, err := sqlBuilder.ToSql()
 	if err != nil{
-		debug.PrintStack()
-		fmt.Println(err)
-		panic(err)
+		return nil, nil, err
 	}
-	fmt.Println(fmt.Sprintf("==1== %v %v %v", reflect.TypeOf(array), reflect.ValueOf(array), array))
-
-	class := reflect.TypeOf(uo.ModelStruct)
-	reflectArray := reflect.MakeSlice(reflect.SliceOf(class), 0, 2).Interface()
-	objArray := reflectArray.([]*ORMUser)
-	_, err = t.Select(&objArray, where)
-	fmt.Println(fmt.Sprintf("==2== %v %v %v", reflect.TypeOf(objArray), reflect.ValueOf(objArray), objArray))
-
-
-	for _, row := range objArray{
-		fmt.Println(fmt.Sprintf("000 Name: %s", row.Name))
-	}
-
-
-
-	fmt.Println("==========----=========")
-	fmt.Println(where)
-	fmt.Println(where.Type())
-	fmt.Println("==========----=========")
-	if err != nil{
-		fmt.Println("===================")
-		debug.PrintStack()
-		fmt.Println("===================")
-		panic(err)
-	}
-
-
-	//class := reflect.TypeOf(&ORMUser{})
-	//reflectArray := reflect.MakeSlice(reflect.SliceOf(class), 0, 0)
-
-
-	//reflectArray := reflect.ValueOf(array)
-
-
-	return reflect.ValueOf(reflectArray)
+	return &sql, args, nil
 }
 
-func (uo OperatorImpl) Create(ctx *context.Context, user interface{}) int64{
+func (uo OperatorImpl) Query(ctx *context.Context, queryArgs ...interface{}) (interface{}, error){
+	sql, args, err := uo.buildSQL(ctx, queryArgs...)
+	if err != nil{
+		return nil, err
+	}
+	return Scan(uo.ModelStruct, *sql, args...)
+}
+
+func (uo OperatorImpl) Create(ctx *context.Context, user interface{}) (int64, error){
 	t := GetORMTable(ctx, uo.TableName)
 	n, err := t.Insert(user)
 	if err != nil{
 		panic(err)
 	}
-	return int64(n)
+	return int64(n), nil
 }
 
-func (uo OperatorImpl) Update(ctx *context.Context, user interface{}) int64{
+func (uo OperatorImpl) Update(ctx *context.Context, user interface{}) (int64, error){
 	t := GetORMTable(ctx, uo.TableName)
 	n, err := t.Update(user)
 	if err != nil{
 		panic(err)
 	}
-	return int64(n)
-}
-
-func nameToStruct(ctx *context.Context, tableName string) interface{}{
-	// ??
-	structs := map[string]interface{}{
-		"user": ORMUser{},
-	}
-	class := structs[tableName]
-	return class
+	return int64(n), nil
 }

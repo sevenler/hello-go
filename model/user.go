@@ -6,9 +6,9 @@ import (
 )
 
 type ORMUser struct {
-	ID     int `borm:"id"`
-	Name   string `borm:"name"`
-	Gender int64  `borm:"gender"`
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+	Gender int64  `json:"gender"`
 }
 
 func NewUserOperator(ctx *context.Context) Operator{
