@@ -6,12 +6,28 @@ import (
 	sq "github.com/Masterminds/squirrel"
 )
 
-type UserOperator struct {}
+type UserOperatorInterface interface {
+	BatchGet(ctx *context.Context, ids []int) []*User
+	Get(ctx *context.Context, id int) *User
+	Create(ctx *context.Context, user *User) bool
+	Update(ctx *context.Context, user *User) bool
+}
+
+type UserOperator struct {
+	operator *model.Operator
+}
+
+func NewUserOperator(operator *model.Operator) *UserOperator {
+	return &UserOperator{
+		operator: operator,
+	}
+}
 
 func (uo *UserOperator) BatchGet(ctx *context.Context, ids []int) []*User{
-	ouo := model.NewOperator()
+	ouo := *uo.operator
 	args := []interface{}{sq.Eq{"id": ids}}
-	q, err := ouo.Query(ctx, &model.ORMUser{}, args)
+	var v model.Table = model.ORMUser{}
+	q, err := ouo.Query(ctx, &v, args)
 	if err != nil{
 		panic(err)
 	}
@@ -27,9 +43,10 @@ func (uo *UserOperator) BatchGet(ctx *context.Context, ids []int) []*User{
 }
 
 func (uo *UserOperator) Get(ctx *context.Context, id int) *User{
-	ouo := model.NewOperator()
+	ouo := *uo.operator
 	args := []interface{}{sq.Eq{"id": id}}
-	q, err := ouo.Query(ctx, &model.ORMUser{}, args)
+	var v model.Table = model.ORMUser{}
+	q, err := ouo.Query(ctx, &v, args)
 	if err != nil{
 		panic(err)
 	}
@@ -42,9 +59,10 @@ func (uo *UserOperator) Get(ctx *context.Context, id int) *User{
 }
 
 func (uo *UserOperator) Create(ctx *context.Context, user *User) bool{
-	ouo := model.NewOperator()
+	ouo := *uo.operator
 	u := Reverse(user)
-	c, err := ouo.Create(ctx, u)
+	var v model.Table = *u
+	c, err := ouo.Create(ctx, &v)
 	if err != nil{
 		panic(err)
 	}
@@ -52,9 +70,10 @@ func (uo *UserOperator) Create(ctx *context.Context, user *User) bool{
 }
 
 func (uo *UserOperator) Update(ctx *context.Context, user *User) bool{
-	ouo := model.NewOperator()
+	ouo := *uo.operator
 	u := Reverse(user)
-	c, err := ouo.Update(ctx, u)
+	var v model.Table = *u
+	c, err := ouo.Update(ctx, &v)
 	if err != nil{
 		panic(err)
 	}

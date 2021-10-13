@@ -51,7 +51,7 @@ type Nullable interface {
 }
 
 // 将SQL查询的数据动态转化成 model 对应的结构体
-func Scan(model interface{}, rows *sqlCon.Rows) (interface{}, error){
+func Scan(model *Table, rows *sqlCon.Rows) (interface{}, error){
 	columns, err := rows.Columns()
 	if err != nil{
 		return nil, err
@@ -62,7 +62,7 @@ func Scan(model interface{}, rows *sqlCon.Rows) (interface{}, error){
 	}
 
 	// key 为 json 标签，value 为字段类型结构体
-	t := reflect.TypeOf(model)
+	t := reflect.TypeOf(*model)
 	if t.Kind() == reflect.Ptr{
 		t = t.Elem()
 	}

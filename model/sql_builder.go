@@ -6,13 +6,9 @@ import (
 	"reflect"
 )
 
-type Table interface {
-	PrimaryKey() map[string]interface{}
-	TableName() string
-}
-
-func BuildSelectSQL(st interface{}, queryArgs ...interface{}) (*string, []interface{}, error){
-	t := reflect.TypeOf(st)
+func BuildSelectSQL(tb *Table, queryArgs ...interface{}) (*string, []interface{}, error){
+	tv := *tb
+	t := reflect.TypeOf(tv)
 	if t.Kind() == reflect.Ptr{
 		t = t.Elem()
 	}
@@ -26,7 +22,7 @@ func BuildSelectSQL(st interface{}, queryArgs ...interface{}) (*string, []interf
 		names = append(names, v)
 	}
 
-	tableName := st.(Table).TableName()
+	tableName := tv.TableName()
 	sqlBuilder := sq.Select(names...).From(tableName)
 	if len(queryArgs) > 0{
 		sqlBuilder = sqlBuilder.Where(queryArgs[0], queryArgs[1:]...)
@@ -38,10 +34,11 @@ func BuildSelectSQL(st interface{}, queryArgs ...interface{}) (*string, []interf
 	return &sql, args, nil
 }
 
-func BuildInsertSQL(t interface{}) (string, []interface{}, error){
+func BuildInsertSQL(tb *Table) (string, []interface{}, error){
 	columns := make([]string, 0)
 	values := make([]interface{}, 0)
-	tableName := t.(Table).TableName()
+	t := *tb
+	tableName := t.TableName()
 
 	tp := reflect.TypeOf(t)
 	if tp.Kind() == reflect.Ptr{
@@ -66,10 +63,11 @@ func BuildInsertSQL(t interface{}) (string, []interface{}, error){
 	return sqlBuilder.ToSql()
 }
 
-func BuildUpdateSQL(t interface{}) (string, []interface{}, error){
+func BuildUpdateSQL(tb *Table) (string, []interface{}, error){
 	values := make(map[string]interface{}, 0)
-	primary := t.(Table).PrimaryKey()
-	tableName := t.(Table).TableName()
+	t := *tb
+	primary := t.PrimaryKey()
+	tableName := t.TableName()
 
 	tp := reflect.TypeOf(t)
 	if tp.Kind() == reflect.Ptr{
